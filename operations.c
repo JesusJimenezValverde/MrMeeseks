@@ -6,9 +6,10 @@
 #include <time.h>
 #include <unistd.h>
 #include <math.h>
+#include <semaphore.h>
 
 int N =1;
-int numInstance = 1;
+int numInstance = 0;
 
 int randGenerate(int inicio, int fin){
     return (rand() % (fin - inicio + 1)) + inicio;
@@ -84,211 +85,98 @@ char * textualRequest(){
     pid_t pid;
     int firstMeeseek;
     int temp_instancia;
+    int temp_N = 1;
 
     int* pipe_a_padre;
     int* pipes_a_hijos;
 
+    numInstance = 0;
+
+    // Variables para medir tiempos
     clock_t timeInit = clock();
     double totalTime = 0.0;
 
+    // Piepe para notificar el estado de retorno
     int fdComplete[2];
     pipe(fdComplete);
     char buf[10];
+
+    // Pipe para paso de solicitud entre procesos
+    char* mensaje = malloc(sizeof(char)*1000);
+    int* pipe_temp = malloc(sizeof(int)*2);
+    pipe(pipe_temp);
+
+    // Semaforo
+    sem_t instance_sem;
+    sem_init(&instance_sem, 1, 1);
+
+    sem_t level_sem;
+    sem_init(&level_sem, 1, 1);
 
     pid = fork();
 
     if(pid == 0){ // Hijo
         firstMeeseek = getpid();
-        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d)\n",getpid(),getppid(),N, numInstance);
+        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d)\n",getpid(),getppid(),temp_N, numInstance);
 
         if(difficult <= 0){ // Muy dificil! Mr Meeseeks no puede hacer esa tarea
             printf("Mr Meeseeks! can't do it\n");
-            close(fdComplete[0]);
-            write(fdComplete[1],"-1",5);
-            close(fdComplete[1]);
+            // close(fdComplete[0]);
+            // write(fdComplete[1],"-1",5);
+            // close(fdComplete[1]);
             exit(0);
         }
 
-        /*
-        do{
-            if(tryRequest(difficult)==1){
-                printf(
-                    "Hi I'm Mr Meeseeks! Look at Meeeee. (pid: %d, ppid: %d, Difi: %d)\n",
-                    getpid(),
-                    getppid(),
-                    difficult
-                );
-                close(fdComplete[0]);
-                write(fdComplete[1],"1",5);
-                close(fdComplete[1]);
-                exit(0);
-                break;
-            }else{
-                int numChild = amountChild(difficult);
-                difficult = diluirDificultad(difficult, numChild);
-                
-                for(int i = 0; i < numChild; i++){
-                    //temp_instancia = i +1;
-
-                    int* pipe_temp = malloc(sizeof(int)*2);
-                    pipe(pipe_temp);
-
-                    pid = fork();
-
-                    if(pid == 0){// Hijo
-
-                        printf(
-                            "Hi I'm Mr Meeseeks! Look at Meeeee. (pid: %d, ppid: %d, N: %d, i: %d, diff:%d)\n",
-                            getpid(),
-                            getppid(),
-                            N,
-                            numInstance,difficult
-                        );
-
-                        char* mensaje = malloc(sizeof(char)*500);
-                        close(pipe_a_padre[1]);
-                        read(pipe_a_padre[0], mensaje, sizeof(mensaje));
-                        close(pipe_a_padre[0]);
-
-                        difficult = diluirDificultad(difficult, numChild);
-                        printf("%d\n",difficult);
-                        //exit(0);
-                        break;
-
-                    }else{ // Padre
-
-                        close(pipe_temp[0]);
-                        write(pipe_temp[1], req, sizeof(req));
-                        close(pipe_temp[1]);
-
-                    }
-
-                }
-
-            }
-            
-        }while(true);*/
-
-
-        /*while(1==1){
-            if(tryRequest(difficult)==1){ // Mr Meeseeks puede hacerlo sin ayuda
-                printf(
-                    "Hi I'm Mr Meeseeks! Look at Meeeee. (pid: %d, ppid: %d, Difi: %d)\n",
-                    getpid(),
-                    getppid(),
-                    difficult
-                );
-                //close(fdComplete[0]);
-                //write(fdComplete[1],"1",5);
-                //close(fdComplete[1]);
-                exit(0);
-                break;
-            }else{ // Mr Meeseeks necesita ayuda de otros Mr Meeseeks
-                int numChild = amountChild(difficult);
-                printf("\n\nVoy a crear %d hijos\n\n",numChild);
-                //N++;
-
-                //if(numInstance > 100){ // caos
-                //    close(fdComplete[0]);
-                //    write(fdComplete[1],"2",5); // caos
-                //    close(fdComplete[1]);
-                //    exit(0);
-                //    break;
-                //}
-
-                //pipes_a_hijos = malloc(sizeof(int)*numChild);
-
-                for(int i = 0; i < numChild; i++){
-                    //temp_instancia = i +1;
-
-                    int* pipe_temp = malloc(sizeof(int)*2);
-                    pipe(pipe_temp);
-
-                    pid = fork();
-
-                    if(pid == 0){// Hijo
-
-                        printf(
-                            "Hi I'm Mr Meeseeks! Look at Meeeee. (pid: %d, ppid: %d, N: %d, i: %d, diff:%d)\n",
-                            getpid(),
-                            getppid(),
-                            N,
-                            numInstance,difficult
-                        );
-
-                        char* mensaje = malloc(sizeof(char)*500);
-                        close(pipe_a_padre[1]);
-                        read(pipe_a_padre[0], mensaje, sizeof(mensaje));
-                        close(pipe_a_padre[0]);
-                        printf("mensaje:%s",mensaje);
-
-                        difficult = diluirDificultad(difficult, numChild);
-                        printf("New Dificult: %d\n",difficult);
-                        //exit(0);
-                        break;
-
-                    }else{ // Padre
-
-                        close(pipe_temp[0]);
-                        write(pipe_temp[1], req, sizeof(req));
-                        close(pipe_temp[1]);
-
-                        wait(NULL);
-
-
-                    }
-
-                }
-                
-                wait(NULL);
-                
-                // if(pid != 0){
-                //     while (wait(NULL) > 0){}
-                //     break;
-                // }
-
-                //exit(0);
-                //break;
-            }
-        }*/
-        
         while(1==1){
             printf("PID:%d tratando...\n",getpid());
             if(tryRequest(difficult)==1){
-                //printf("Yo pid:%d necesito ayuda, lo hago solo\n",getpid());
-                printf(
-                    "Solucionado Hi I'm Mr Meeseeks! Look at Meeeee. (pid: %d, ppid: %d, Difi: %d)\n",
-                    getpid(),
-                    getppid(),
-                    difficult
-                );
+                
+                printf("Solucionado Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d, dif: %d, mens: %s)\n",getpid(),getppid(),temp_N, numInstance,difficult,mensaje);
+                
+                // close(fdComplete[0]);
+                // write(fdComplete[1],"1",5);
+                // close(fdComplete[1]);
                 exit(0);
+                //kill(getpid(),0);
                 break;
             }else{
                 int numChild = amountChild(difficult);
                 printf("El pid:%d creara %d hijos\n",getpid(),numChild);
+                
+                temp_N++;
+
                 for(int i = 0; i < numChild; i++){
                     pid = fork();
 
                     if(pid == 0){ //si el fork si se realizó y un hijo se creó
-                        printf(
-                            "Hi I'm Mr Meeseeks! Look at Meeeee. (pid: %d, ppid: %d, Difi: %d)\n",
-                            getpid(),
-                            getppid(),
-                            difficult
-                        );
+
+                        // Manejo de semarofos para aumentar el numero de instancias
+                        sem_wait(&instance_sem);
+
+                        numInstance++;
+                        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d, dif: %d, mens: %s)\n",getpid(),getppid(),temp_N, numInstance,difficult,mensaje);
+
+                        sem_post(&instance_sem);
+
+                        
+                        // Se recibe el req por un pipe
+                        close(pipe_temp[1]);
+                        read(pipe_temp[0], mensaje, sizeof(char)*1000);
+                        close(pipe_temp[0]);
+                        printf("mensaje:%s\n",mensaje);
+
                         difficult = diluirDificultad(difficult,numChild); //difficult*2;
                         break;
                     }else{ // Padre
-                        wait(NULL);
-                        printf("Padre de los sub meeseeks\n");
+
+                        close(pipe_temp[0]);
+                        write(pipe_temp[1], req, sizeof(char)*1000);
+                        close(pipe_temp[1]);
+                        
+                        //wait(NULL); // si pongo esto cada hijo solo crea 1, no crea los n que diga num child
                     }
 
                 }
-                // if(pid != 0){
-                //     exit(0);
-                //     break;
-                // }
                 if(pid != 0){
                     while (wait(NULL) > 0){}
                     break;
@@ -297,9 +185,10 @@ char * textualRequest(){
         }
 
     }else{ // Padre
-        //close(fdComplete[1]);
-        //read(fdComplete[0],buf,sizeof(buf));
-        //printf("Padre lee: %s\n",buf );
+        // close(fdComplete[1]);
+        // read(fdComplete[0],buf,sizeof(buf));
+        // close(fdComplete[0]);
+        // printf("Padre lee: %s\n",buf );
         wait(NULL);
     }
 

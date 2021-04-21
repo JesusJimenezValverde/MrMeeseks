@@ -18,7 +18,7 @@ void mrMeeseeks(){
 
     while(option != 4){
 
-        printf("Seleccione una de las opciones:\n\t1. Accion Textual\n\t2. Operaciones Aritmeticas\n\t3. Ejecutar Programa\n\t4. Salir\n\nIngrese el numero de la acción que desar realizar: ");
+        printf("Seleccione(%d) una de las opciones:\n\t1. Accion Textual\n\t2. Operaciones Aritmeticas\n\t3. Ejecutar Programa\n\t4. Salir\n\nIngrese el numero de la acción que desar realizar: ",getpid());
         
         scanf("%d", &option);
 
