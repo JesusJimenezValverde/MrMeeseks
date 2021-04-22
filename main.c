@@ -18,7 +18,9 @@ void mrMeeseeks(){
 
     while(option != 4){
 
-        printf("Seleccione(%d) una de las opciones:\n\t1. Accion Textual\n\t2. Operaciones Aritmeticas\n\t3. Ejecutar Programa\n\t4. Salir\n\nIngrese el numero de la acción que desar realizar: ",getpid());
+        printf("\n                    █████                         \n");
+        printf("--------------------------------------------------\n");
+        printf("Seleccione(%d) una de las opciones:\n\t1. Accion Textual\n\t2. Operacion Logica-Aritmeticas\n\t3. Ejecutar Programa\n\t4. Salir\n\nIngrese el numero de la acción que desar realizar: ",getpid());
         
         scanf("%d", &option);
 
@@ -29,12 +31,15 @@ void mrMeeseeks(){
             break;
 
         case 2: // Aritmetica: "2 + 2"
+            aritmeticLogicRequest();
             break;
         
         case 3: // Correr Programa
+            runProgram();
             break;
 
         case 4:
+            printf("Gracias por usar la Meeseeks box\n");
             break;
             
         default:

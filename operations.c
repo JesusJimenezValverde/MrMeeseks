@@ -15,15 +15,17 @@ int randGenerate(int inicio, int fin){
     return (rand() % (fin - inicio + 1)) + inicio;
 }
 
+/*FUNCIONES PARA LAS PETICIONES TEXTUALES*/
+
 char* readRequest(){
-    char* tarea = malloc(sizeof(char)*1000);
+    char* req = malloc(sizeof(char)*1000);
 
     printf("Que necesita que haga Mr. Meeseeks? ");
-    scanf(" %[^\n]", tarea);
+    scanf(" %[^\n]", req);
     getchar();
 
-    printf("Mr. Meeseeks hara: %s\n",tarea);
-    return tarea;
+    printf("Mr. Meeseeks hara: %s\n",req);
+    return req;
 }
 
 int readDifficult(){
@@ -193,3 +195,154 @@ char * textualRequest(){
     }
 
 }
+
+
+/*FUNCIONES PARA LAS PETICIONES ARITMETICAS*/
+
+char* readOperation(){
+    char* operation = malloc(sizeof(char)*10000);
+
+    printf("Los Mr Meeseeks solucionan operaciones de tipo '50 + 5' (+, -, *, /, &, |, ~)\n");
+    printf("Ingrese la operacion a resolver: ");
+
+    scanf(" %[^\n]", operation);
+    getchar();
+
+    printf("Mr. Meeseeks hara: %s\n",operation);
+    return operation;
+
+}
+
+int operate(int num1, char operator, int num2, int *result){
+    
+    switch (operator){
+        case '+':
+            *result = num1 + num2;
+            return 1;
+        case '-':
+            *result = num1 - num2;
+            return 1;
+        case '*':
+            *result = num1 * num2;
+            return 1;
+        case '/':
+            if(num2 == 0){
+                return 0;
+            }
+            *result = num1 / num2;
+            return 1;
+        case '&':
+            *result = num1 && num2;
+            return 1;
+        case '|':
+            *result = num1 || num2;
+            return 1;
+        case '~':
+            if(num1){
+                *result = 0;
+            }else{
+                *result = 1;
+            }
+            return 1;
+        default:
+            return -1;
+    }
+    
+}
+
+char* aritmeticLogicRequest(){
+
+    char* operation = malloc(sizeof(char)*10000);
+    int num1 = 0;
+    int num2 = 0;
+    int result = 0;
+
+    char ope;
+
+    // Medicion de tiempo
+    clock_t inicio = clock();
+    double tiempoTotal = 0.0;
+
+    pid_t pid = fork();
+
+    if(pid < 0){
+        printf("Existence is Pain");
+    }else if(pid == 0){ // Hijo
+        printf("\nHi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d)\n",getpid(),getppid());
+        operation = readOperation();
+        
+        sscanf(operation,"%d %c %d",&num1,&ope,&num2);
+
+        int state  = operate(num1,ope,num2, &result);
+
+        if(state == 1){ // Todo bien
+            printf("Mr Meeseeks llego al resultado de la operacion %s = %d\n",operation,result);
+        }else if(state == 0){ // Division entre 0
+            printf("Mr Meeseeks no puede resolver divisiones entre O\n");
+        }else{ // operacion invalida
+            printf("Mr Meeseeks no puede realizar la operacion: '%c'\n",ope);
+        }
+
+        exit(0);
+
+    }else{ // Padre
+        wait(NULL);
+        tiempoTotal = (double)(clock() - inicio) / CLOCKS_PER_SEC;
+        printf("Mr Meeseeks %d tardo %f\n",pid,tiempoTotal);
+    }
+
+}
+
+/*FUNCIONES PARA LAS PETICIONES DE CORRER PROGRAMAS*/
+
+char* readProgram(){
+    char* program = malloc(sizeof(char)*10000);
+
+    printf("Ingrese el nombre del programa a ejecutar: ");
+
+    scanf(" %[^\n]", program);
+    getchar();
+
+    printf("Mr. Meeseeks ejecutara: '%s'\n",program);
+    return program;
+
+}
+
+
+char* runProgram(){
+
+    char* program = malloc(sizeof(char)*10000);
+    
+    int state;
+
+    // Medicion de tiempo
+    clock_t inicio = clock();
+    double tiempoTotal = 0.0;
+
+    pid_t pid = fork();
+
+    if(pid < 0){
+        printf("Existence is Pain");
+    }else if(pid == 0){ // Hijo
+        printf("\nHi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d)\n",getpid(),getppid());
+        program = readProgram();
+
+        state = system(program);
+
+        if(state == 0){
+            printf("Mr Meeseeks pudo ejecutar '%s'\n",program);
+        }else{
+            printf("Mr Meeseeks NO pudo ejecutar '%s'\n",program);
+        }
+
+        exit(0);
+
+    }else{ // Padre
+        wait(NULL);
+        tiempoTotal = (double)(clock() - inicio) / CLOCKS_PER_SEC;
+        printf("Mr Meeseeks %d tardo %f\n",pid,tiempoTotal);
+    }
+
+}
+
+
