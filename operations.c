@@ -90,7 +90,7 @@ double diluirDificultad(double dificultad, int numHIjos){
     }
 }
 
-char * textualRequest(){
+char * textualRequest(int *stateDone){
     char * req = readRequest();
     int difficult = readDifficult();
 
@@ -135,9 +135,9 @@ char * textualRequest(){
 
             //something similar but 
             printf("Mr Meeseeks! can't do it\n");
-            // close(fdComplete[0]);
-            // write(fdComplete[1],"-1",5);
-            // close(fdComplete[1]);
+            close(fdComplete[0]);
+            write(fdComplete[1],"-1",5);
+            close(fdComplete[1]);
             exit(0);
         }
 
@@ -145,13 +145,13 @@ char * textualRequest(){
             printf("PID:%d tratando...\n",getpid());
             if(tryRequest(difficult)==1){
                 
-                printf("Solucionado Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d, dif: %d, mens: %s)\n",getpid(),getppid(),temp_N, numInstance,difficult,mensaje);
+                printf("Solucionado Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, dif: %d, mens: %s)\n",getpid(),getppid(),temp_N,difficult,mensaje);
                 
-                // close(fdComplete[0]);
-                // write(fdComplete[1],"1",5);
-                // close(fdComplete[1]);
+                close(fdComplete[0]);
+                write(fdComplete[1],"1",5);
+                close(fdComplete[1]);
                 exit(0);
-                //kill(getpid(),0);
+                
                 break;
             }else{
                 int numChild = amountChild(difficult);
@@ -168,7 +168,7 @@ char * textualRequest(){
                         sem_wait(&instance_sem);
 
                         numInstance++;
-                        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d, dif: %d, mens: %s)\n",getpid(),getppid(),temp_N, numInstance,difficult,mensaje);
+                        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d, dif: %d, mens: %s)\n",getpid(),getppid(),temp_N, i+1,difficult,mensaje);
 
                         sem_post(&instance_sem);
 
@@ -199,11 +199,28 @@ char * textualRequest(){
         }
 
     }else{ // Padre
-        // close(fdComplete[1]);
-        // read(fdComplete[0],buf,sizeof(buf));
-        // close(fdComplete[0]);
-        // printf("Padre lee: %s\n",buf );
         wait(NULL);
+
+        close(fdComplete[1]);
+        read(fdComplete[0],buf,sizeof(buf));
+        close(fdComplete[0]);
+        printf("Padre lee: %s, %d\n",buf,numInstance );
+        
+        totalTime = (double)(clock() - timeInit) / CLOCKS_PER_SEC; //printf("Mr Meeseeks %d tardo %f\n",pid,totalTime);
+
+        char* log = malloc(sizeof(char)*1000);
+        
+        if(!strcmp(buf,"1")){
+            sprintf(log, "- Mr Meeseeks: %d, hizo tarea '%s'(dificultad:%d), tardo : %f\n",pid,req,difficult,totalTime);
+            *stateDone = 1;
+        }else if(!strcmp(buf,"-1")){
+            sprintf(log, "- Mr Meeseeks: %d NO logro hacer la tarea '%s'(dificultad:%d)\n",pid,req,difficult);
+            *stateDone = 0;
+        }
+
+        //printf("%s",log);
+        return log;
+
     }
 
 }
@@ -262,7 +279,7 @@ int operate(int num1, char operator, int num2, int *result){
     
 }
 
-char* aritmeticLogicRequest(){
+char* aritmeticLogicRequest(int *stateDone){
 
     char* operation = malloc(sizeof(char)*10000);
     int num1 = 0;
@@ -275,6 +292,10 @@ char* aritmeticLogicRequest(){
     clock_t inicio = clock();
     double tiempoTotal = 0.0;
 
+    // Piepe para notificar el estado de retorno
+    int fdComplete[2];
+    pipe(fdComplete);
+
     pid_t pid = fork();
 
     if(pid < 0){
@@ -286,21 +307,57 @@ char* aritmeticLogicRequest(){
         sscanf(operation,"%d %c %d",&num1,&ope,&num2);
 
         int state  = operate(num1,ope,num2, &result);
+        char* resOper = malloc(sizeof(char)*100);
 
         if(state == 1){ // Todo bien
             printf("Mr Meeseeks llego al resultado de la operacion %s = %d\n",operation,result);
+            
+            sprintf(resOper,"%s = %d",operation,result);
+            
+            close(fdComplete[0]);
+            write(fdComplete[1],resOper,sizeof(char)*100);
+            close(fdComplete[1]);
+        
         }else if(state == 0){ // Division entre 0
             printf("Mr Meeseeks no puede resolver divisiones entre O\n");
+            close(fdComplete[0]);
+            write(fdComplete[1],"div0",5);
+            close(fdComplete[1]);
         }else{ // operacion invalida
             printf("Mr Meeseeks no puede realizar la operacion: '%c'\n",ope);
+            close(fdComplete[0]);
+            write(fdComplete[1],"nan",5);
+            close(fdComplete[1]);
         }
 
         exit(0);
 
     }else{ // Padre
         wait(NULL);
+    
+        char buf[100];
+
+        close(fdComplete[1]);
+        read(fdComplete[0],buf,sizeof(buf));
+        close(fdComplete[0]);
+
         tiempoTotal = (double)(clock() - inicio) / CLOCKS_PER_SEC;
-        printf("Mr Meeseeks %d tardo %f\n",pid,tiempoTotal);
+        char* log = malloc(sizeof(char)*1000);
+
+        if(!strcmp(buf,"div0")){
+            sprintf(log,"- Mr Meeseeks: %d, No soluciono la operacion por una division entre 0\n",pid);
+            *stateDone = 0;
+        }else if(!strcmp(buf,"nan")){
+            sprintf(log,"- Mr Meeseeks: %d, No soluciono la operacion por un operador desconocido\n",pid);
+            *stateDone = 0;
+        }else{
+            sprintf(log,"- Mr Meeseeks: %d, soluciono la operacion '%s', tardo : %f\n",pid,buf, tiempoTotal);
+            *stateDone = 1;
+        }
+
+        //printf("Mr Meeseeks %d tardo %f\n",pid,tiempoTotal);
+        //printf("%s\n",log);
+        return log;
     }
 
 }
@@ -321,7 +378,7 @@ char* readProgram(){
 }
 
 
-char* runProgram(){
+char* runProgram(int *stateDone){
 
     char* program = malloc(sizeof(char)*10000);
     
@@ -330,6 +387,10 @@ char* runProgram(){
     // Medicion de tiempo
     clock_t inicio = clock();
     double tiempoTotal = 0.0;
+
+    // Piepe para notificar el estado de retorno
+    int fdComplete[2];
+    pipe(fdComplete);
 
     pid_t pid = fork();
 
@@ -343,16 +404,44 @@ char* runProgram(){
 
         if(state == 0){
             printf("Mr Meeseeks pudo ejecutar '%s'\n",program);
+            
+            close(fdComplete[0]);
+            write(fdComplete[1],program,sizeof(char)*10000);
+            close(fdComplete[1]);
         }else{
             printf("Mr Meeseeks NO pudo ejecutar '%s'\n",program);
+
+            close(fdComplete[0]);
+            write(fdComplete[1],"0",5);
+            close(fdComplete[1]);
         }
 
         exit(0);
 
     }else{ // Padre
         wait(NULL);
+
+        char buf[10000];
+
+        close(fdComplete[1]);
+        read(fdComplete[0],buf,sizeof(buf));
+        close(fdComplete[0]);
+
         tiempoTotal = (double)(clock() - inicio) / CLOCKS_PER_SEC;
-        printf("Mr Meeseeks %d tardo %f\n",pid,tiempoTotal);
+        char* log = malloc(sizeof(char)*1000);
+
+        if(!strcmp(buf,"0")){
+            sprintf(log,"- Mr Meeseeks: %d, No logro ejecutar el programa\n",pid);
+            *stateDone = 0;
+        }else{
+            sprintf(log,"- Mr Meeseeks: %d, ejectuto el programa '%s', tardo : %f\n",pid,buf, tiempoTotal);
+            *stateDone = 1;
+        }
+
+        //printf("Mr Meeseeks %d tardo %f\n",pid,tiempoTotal);
+        //printf("%s\n",log);
+        return log;
+
     }
 
 }
