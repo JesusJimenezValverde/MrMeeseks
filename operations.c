@@ -1,3 +1,13 @@
+/*
+SO - Tarea #2 - Mr.Meeseeks
+Tecnológico de Costa Rica, Sede Central Cartago, Primer Semestre 2021
+Escuela de Ingeieria en Computación, Principios de Sistemas Operativos
+Prof.: Esteban Árias Mendez
+Hecho por: 
+Fabián Ceciliano Ramírez - 2018
+Jesus Esteban Jiménez Valverde - 2017112650
+Fecha de entrega: 24-4-2021
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -122,6 +132,8 @@ char * textualRequest(){
         printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d)\n",getpid(),getppid(),temp_N, numInstance);
 
         if(difficult <= 0){ // Muy dificil! Mr Meeseeks no puede hacer esa tarea
+
+            //something similar but 
             printf("Mr Meeseeks! can't do it\n");
             // close(fdComplete[0]);
             // write(fdComplete[1],"-1",5);
