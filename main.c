@@ -16,6 +16,17 @@
 void mrMeeseeks(){
     int option = 1;
 
+    int originalBox = getpid();
+
+    int totalReq = 0;
+    int amountFinished = 0;
+    int amountNotFinishef = 0;
+
+    char* request  = malloc(sizeof(char)*1000);
+    int state = 0;
+
+    char* log  = malloc(sizeof(char)*10000); 
+
     while(option != 4){
 
         printf("\n                    █████                         \n");
@@ -24,26 +35,66 @@ void mrMeeseeks(){
         
         scanf("%d", &option);
 
+        char* request  = malloc(sizeof(char)*1000);
+
         switch (option)
         {
         case 1: // Textuales: "quiero ser feliz"
-            textualRequest();
+            strcat(request,textualRequest(&state));
+            
+            printf("%s",request);
+            
+            if(state == 1){
+                amountFinished++;
+            }else{
+                amountNotFinishef++;
+            }
+            //textualRequest();
             break;
 
         case 2: // Aritmetica: "2 + 2"
-            aritmeticLogicRequest();
+            strcat(request,aritmeticLogicRequest(&state));
+            
+            printf("%s",request);
+            
+            if(state == 1){
+                amountFinished++;
+            }else{
+                amountNotFinishef++;
+            }
+            //aritmeticLogicRequest();
             break;
         
         case 3: // Correr Programa
-            runProgram();
+            strcat(request,runProgram(&state));
+            
+            printf("%s",request);
+            
+            if(state == 1){
+                amountFinished++;
+            }else{
+                amountNotFinishef++;
+            }
+            //runProgram();
             break;
 
         case 4:
-            printf("Gracias por usar la Meeseeks box\n");
+            printf("------------------------------------------BITACORA\n");
+            printf("Cantidad total: %d\nCantidad terminadas: %d\nCantidad NO terminadas: %d\n",totalReq,amountFinished,amountNotFinishef);
+            printf("Tareas:\n%s",log);
+            printf("------------------------------------------Gracias por usar la Meeseeks box\n");
             break;
             
         default:
             printf("Intente de nuevo");
+            break;
+        }
+
+        if(getpid()==originalBox){
+            // hecer algo con "request"
+            strcat(log,request);
+            totalReq++;
+        }else{
             break;
         }
 
