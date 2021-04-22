@@ -2,7 +2,7 @@
 Tecnológico de Costa Rica, Sede Central Cartago, Primer Semestre 2021
 Escuela de Ingeieria en Computación, Principios de Sistemas Operativos
 Prof.: Esteban Árias Mendez 
-Fabián Ceciliano Ramírez - 2018
+Fabián Ceciliano Ramírez - 2018142999
 Jesus Esteban Jiménez Valverde - 2017112650
 
 ## Description
