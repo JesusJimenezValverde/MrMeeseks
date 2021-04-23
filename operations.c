@@ -45,8 +45,20 @@ int readDifficult(){
     //getchar();
 
     if(difficult == -1){
-        difficult = randGenerate(0, 100);
+        //difficult = randGenerate(0, 100);
+
+        int type = randGenerate(0, 100);
+
+        if(type >= 0 && type <= 15){
+            difficult = randGenerate(0, 45);
+        }else if(type > 15 && type <= 85){
+            difficult = randGenerate(45, 85);
+        }else{ // 86 <= type <= 100
+            difficult = randGenerate(85, 100);
+        }
+
         printf("Mr. Meeseeks hara la tarea con dificultad: %d\n", difficult);
+
     }else
     {
         //printf("Mr. Meeseeks hara la tarea con dificultad: %d\n", difficult);
@@ -133,8 +145,20 @@ char * textualRequest(int *stateDone){
 
         if(difficult <= 0){ // Muy dificil! Mr Meeseeks no puede hacer esa tarea
 
+            pid_t newPid;
+
+            for (int i = 0; i < 4; i++){
+                if(fork() == 0){
+                    printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d)\n",getpid(),getppid(),2, i+1);
+                    sleep(randGenerate(1,5));
+                    printf("Mr Meeseeks(pid:%d) can't do it\n",getpid());
+                    exit(0);
+                }else{
+                    wait(NULL);
+                }
+            }
             //something similar but 
-            printf("Mr Meeseeks can't do it\n");
+            //printf("Mr Meeseeks can't do it\n");
             close(fdComplete[0]);
             write(fdComplete[1],"-1",5);
             close(fdComplete[1]);
@@ -143,6 +167,21 @@ char * textualRequest(int *stateDone){
 
         while(1==1){
             printf("PID:%d tratando...\n",getpid());
+
+            clock_gettime(CLOCK_REALTIME, &end);
+            long seconds = end.tv_sec - begin.tv_sec;
+            long nanoseconds = end.tv_nsec - begin.tv_nsec;
+            double elapsed = seconds + nanoseconds*1e-9;
+
+            if(elapsed > 10){
+                close(fdComplete[0]);
+                write(fdComplete[1],"2",5);
+                close(fdComplete[1]);
+                exit(0);
+                break;
+            }
+
+
             if(tryRequest(difficult)==1){
                 
                 printf("Lo logre!! Mr Meeseeks(pid: %d, ppid: %d, N: %d, dif: %d) Bye!!!\n",getpid(),getppid(),temp_N,difficult);
@@ -177,7 +216,7 @@ char * textualRequest(int *stateDone){
                         close(pipe_temp[1]);
                         read(pipe_temp[0], mensaje, sizeof(char)*1000);
                         close(pipe_temp[0]);
-                        printf("mensaje:%s\n",mensaje);
+                        //printf("mensaje:%s\n",mensaje);
 
                         difficult = diluirDificultad(difficult,numChild); //difficult*2;
                         break;
@@ -205,6 +244,10 @@ char * textualRequest(int *stateDone){
         read(fdComplete[0],buf,sizeof(buf));
         close(fdComplete[0]);
         //printf("Padre lee: %s, %d\n",buf,numInstance );
+
+        if(!strcmp(buf,"2")){
+            printf("\n\n\n\nCAOS PLANETARIO\n\n\n\n");
+        }
         
         // Medicion de tiempo
         clock_gettime(CLOCK_REALTIME, &end);
