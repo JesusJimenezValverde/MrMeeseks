@@ -102,7 +102,7 @@ double diluirDificultad(double dificultad, int numHIjos){
     }
 }
 
-char * textualRequest(int *stateDone){
+char * textualRequest(int *stateDone, int amountSegToChaos){
     char * req = readRequest();
     int difficult = readDifficult();
 
@@ -173,7 +173,7 @@ char * textualRequest(int *stateDone){
             long nanoseconds = end.tv_nsec - begin.tv_nsec;
             double elapsed = seconds + nanoseconds*1e-9;
 
-            if(elapsed > 10){
+            if(elapsed > amountSegToChaos){
                 close(fdComplete[0]);
                 write(fdComplete[1],"2",5);
                 close(fdComplete[1]);
@@ -244,10 +244,6 @@ char * textualRequest(int *stateDone){
         read(fdComplete[0],buf,sizeof(buf));
         close(fdComplete[0]);
         //printf("Padre lee: %s, %d\n",buf,numInstance );
-
-        if(!strcmp(buf,"2")){
-            printf("\n\n\n\nCAOS PLANETARIO\n\n\n\n");
-        }
         
         // Medicion de tiempo
         clock_gettime(CLOCK_REALTIME, &end);
@@ -262,6 +258,10 @@ char * textualRequest(int *stateDone){
             *stateDone = 1;
         }else if(!strcmp(buf,"-1")){
             sprintf(log, "- Mr Meeseeks: %d NO logro hacer la tarea '%s'(dificultad:%d)\n",pid,req,difficult);
+            *stateDone = 0;
+        }else if(!strcmp(buf,"2")){
+            printf("\n\n☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢\n\t\tCAOS PLANETARIO\n☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢\n\n");
+            sprintf(log, "- Se declaro CAOS PLANETARIO para la tarea '%s'(dificultad:%d)\n",req,difficult);
             *stateDone = 0;
         }
 

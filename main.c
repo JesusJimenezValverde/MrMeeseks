@@ -32,16 +32,18 @@ void mrMeeseeks(){
     int amountFinished = 0;
     int amountNotFinishef = 0;
 
+    int amountSegToChaos = 5*60;
+
     char* request  = malloc(sizeof(char)*1000);
     int state = 0;
 
     char* log  = malloc(sizeof(char)*10000); 
 
-    while(option != 4){
+    while(option != 5){
 
         printf("\n                    █████                         \n");
         printf("--------------------------------------------------\n");
-        printf("Seleccione(%d) una de las opciones:\n\t1. Accion Textual\n\t2. Operacion Logica-Aritmeticas\n\t3. Ejecutar Programa\n\t4. Salir\n\nIngrese el numero de la acción que desar realizar: ",getpid());
+        printf("Seleccione(%d) una de las opciones:\n\t1. Accion Textual\n\t2. Operacion Logica-Aritmeticas\n\t3. Ejecutar Programa\n\t4. Configurar tiempo antes del caos planetario\n\t5. Salir\n\nIngrese el numero de la acción que desar realizar: ",getpid());
         
         scanf("%d", &option);
 
@@ -50,7 +52,7 @@ void mrMeeseeks(){
         switch (option)
         {
         case 1: // Textuales: "quiero ser feliz"
-            strcat(request,textualRequest(&state));
+            strcat(request,textualRequest(&state,amountSegToChaos));
             
             printf("%s",request);
             
@@ -89,6 +91,11 @@ void mrMeeseeks(){
             break;
 
         case 4:
+            printf("Ingrese la cantidad de segundos antes del caos planetario: ");
+            scanf("%d", &amountSegToChaos);
+            break;
+
+        case 5:
             printf("------------------------------------------BITACORA\n");
             printf("Cantidad total: %d\nCantidad terminadas: %d\nCantidad NO terminadas: %d\n",totalReq,amountFinished,amountNotFinishef);
             printf("Tareas:\n%s",log);
