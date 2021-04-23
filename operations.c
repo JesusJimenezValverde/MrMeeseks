@@ -34,7 +34,7 @@ char* readRequest(){
     scanf(" %[^\n]", req);
     getchar();
 
-    printf("Mr. Meeseeks hara: %s\n",req);
+    //printf("Mr. Meeseeks hara: %s\n",req);
     return req;
 }
 
@@ -46,10 +46,10 @@ int readDifficult(){
 
     if(difficult == -1){
         difficult = randGenerate(0, 100);
-        printf("Mr. Meeseeks dice que la dificultad es: %d\n", difficult);
+        printf("Mr. Meeseeks hara la tarea con dificultad: %d\n", difficult);
     }else
     {
-        printf("Mr. Meeseeks hara la tarea con dificultad: %d\n", difficult);
+        //printf("Mr. Meeseeks hara la tarea con dificultad: %d\n", difficult);
     }
     
     return difficult;
@@ -105,8 +105,8 @@ char * textualRequest(int *stateDone){
     numInstance = 0;
 
     // Variables para medir tiempos
-    clock_t timeInit = clock();
-    double totalTime = 0.0;
+    struct timespec begin, end; 
+    clock_gettime(CLOCK_REALTIME, &begin);
 
     // Piepe para notificar el estado de retorno
     int fdComplete[2];
@@ -134,7 +134,7 @@ char * textualRequest(int *stateDone){
         if(difficult <= 0){ // Muy dificil! Mr Meeseeks no puede hacer esa tarea
 
             //something similar but 
-            printf("Mr Meeseeks! can't do it\n");
+            printf("Mr Meeseeks can't do it\n");
             close(fdComplete[0]);
             write(fdComplete[1],"-1",5);
             close(fdComplete[1]);
@@ -145,7 +145,7 @@ char * textualRequest(int *stateDone){
             printf("PID:%d tratando...\n",getpid());
             if(tryRequest(difficult)==1){
                 
-                printf("Solucionado Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, dif: %d, mens: %s)\n",getpid(),getppid(),temp_N,difficult,mensaje);
+                printf("Lo logre!! Mr Meeseeks(pid: %d, ppid: %d, N: %d, dif: %d) Bye!!!\n",getpid(),getppid(),temp_N,difficult);
                 
                 close(fdComplete[0]);
                 write(fdComplete[1],"1",5);
@@ -204,14 +204,18 @@ char * textualRequest(int *stateDone){
         close(fdComplete[1]);
         read(fdComplete[0],buf,sizeof(buf));
         close(fdComplete[0]);
-        printf("Padre lee: %s, %d\n",buf,numInstance );
+        //printf("Padre lee: %s, %d\n",buf,numInstance );
         
-        totalTime = (double)(clock() - timeInit) / CLOCKS_PER_SEC; //printf("Mr Meeseeks %d tardo %f\n",pid,totalTime);
+        // Medicion de tiempo
+        clock_gettime(CLOCK_REALTIME, &end);
+        long seconds = end.tv_sec - begin.tv_sec;
+        long nanoseconds = end.tv_nsec - begin.tv_nsec;
+        double elapsed = seconds + nanoseconds*1e-9;
 
         char* log = malloc(sizeof(char)*1000);
         
         if(!strcmp(buf,"1")){
-            sprintf(log, "- Mr Meeseeks: %d, hizo tarea '%s'(dificultad:%d), tardo : %f\n",pid,req,difficult,totalTime);
+            sprintf(log, "- Mr Meeseeks: %d, hizo tarea '%s'(dificultad:%d), tardo : %f seg\n",pid,req,difficult,elapsed);
             *stateDone = 1;
         }else if(!strcmp(buf,"-1")){
             sprintf(log, "- Mr Meeseeks: %d NO logro hacer la tarea '%s'(dificultad:%d)\n",pid,req,difficult);
@@ -237,7 +241,7 @@ char* readOperation(){
     scanf(" %[^\n]", operation);
     getchar();
 
-    printf("Mr. Meeseeks hara: %s\n",operation);
+    //printf("Mr. Meeseeks hara: %s\n",operation);
     return operation;
 
 }
@@ -288,9 +292,12 @@ char* aritmeticLogicRequest(int *stateDone){
 
     char ope;
 
+    // Solicitar info
+    operation = readOperation();
+
     // Medicion de tiempo
-    clock_t inicio = clock();
-    double tiempoTotal = 0.0;
+    struct timespec begin, end; 
+    clock_gettime(CLOCK_REALTIME, &begin);
 
     // Piepe para notificar el estado de retorno
     int fdComplete[2];
@@ -302,7 +309,6 @@ char* aritmeticLogicRequest(int *stateDone){
         printf("Existence is Pain");
     }else if(pid == 0){ // Hijo
         printf("\nHi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d)\n",getpid(),getppid());
-        operation = readOperation();
         
         sscanf(operation,"%d %c %d",&num1,&ope,&num2);
 
@@ -341,7 +347,12 @@ char* aritmeticLogicRequest(int *stateDone){
         read(fdComplete[0],buf,sizeof(buf));
         close(fdComplete[0]);
 
-        tiempoTotal = (double)(clock() - inicio) / CLOCKS_PER_SEC;
+        // Medir el tiempo
+        clock_gettime(CLOCK_REALTIME, &end);
+        long seconds = end.tv_sec - begin.tv_sec;
+        long nanoseconds = end.tv_nsec - begin.tv_nsec;
+        double elapsed = seconds + nanoseconds*1e-9;
+
         char* log = malloc(sizeof(char)*1000);
 
         if(!strcmp(buf,"div0")){
@@ -351,7 +362,7 @@ char* aritmeticLogicRequest(int *stateDone){
             sprintf(log,"- Mr Meeseeks: %d, No soluciono la operacion por un operador desconocido\n",pid);
             *stateDone = 0;
         }else{
-            sprintf(log,"- Mr Meeseeks: %d, soluciono la operacion '%s', tardo : %f\n",pid,buf, tiempoTotal);
+            sprintf(log,"- Mr Meeseeks: %d, soluciono la operacion '%s', tardo : %f seg\n",pid,buf, elapsed);
             *stateDone = 1;
         }
 
@@ -372,7 +383,7 @@ char* readProgram(){
     scanf(" %[^\n]", program);
     getchar();
 
-    printf("Mr. Meeseeks ejecutara: '%s'\n",program);
+    //printf("Mr. Meeseeks ejecutara: '%s'\n",program);
     return program;
 
 }
@@ -384,9 +395,12 @@ char* runProgram(int *stateDone){
     
     int state;
 
+    // Leer info
+    program = readProgram();
+
     // Medicion de tiempo
-    clock_t inicio = clock();
-    double tiempoTotal = 0.0;
+    struct timespec begin, end; 
+    clock_gettime(CLOCK_REALTIME, &begin);
 
     // Piepe para notificar el estado de retorno
     int fdComplete[2];
@@ -398,7 +412,6 @@ char* runProgram(int *stateDone){
         printf("Existence is Pain");
     }else if(pid == 0){ // Hijo
         printf("\nHi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d)\n",getpid(),getppid());
-        program = readProgram();
 
         state = system(program);
 
@@ -427,14 +440,19 @@ char* runProgram(int *stateDone){
         read(fdComplete[0],buf,sizeof(buf));
         close(fdComplete[0]);
 
-        tiempoTotal = (double)(clock() - inicio) / CLOCKS_PER_SEC;
+        // Medicion de tiempo
+        clock_gettime(CLOCK_REALTIME, &end);
+        long seconds = end.tv_sec - begin.tv_sec;
+        long nanoseconds = end.tv_nsec - begin.tv_nsec;
+        double elapsed = seconds + nanoseconds*1e-9;
+
         char* log = malloc(sizeof(char)*1000);
 
         if(!strcmp(buf,"0")){
             sprintf(log,"- Mr Meeseeks: %d, No logro ejecutar el programa\n",pid);
             *stateDone = 0;
         }else{
-            sprintf(log,"- Mr Meeseeks: %d, ejectuto el programa '%s', tardo : %f\n",pid,buf, tiempoTotal);
+            sprintf(log,"- Mr Meeseeks: %d, ejectuto el programa '%s', tardo : %f seg\n",pid,buf, elapsed);
             *stateDone = 1;
         }
 
