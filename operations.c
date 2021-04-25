@@ -263,7 +263,7 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
         if(!strcmp(buf,"-1")){
             sprintf(log, "- Mr Meeseeks: %d NO logro hacer la tarea '%s'(dificultad:%d)\n",pid,req,difficult);
             *stateDone = 0;
-        }else if(!strcmp(buf,"2")){
+        }else if(!strcmp(buf,"0")){
             printf("\n\n☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢\n\t\tCAOS PLANETARIO\n☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢\n\n");
             sprintf(log, "- Se declaro CAOS PLANETARIO para la tarea '%s'(dificultad:%d)\n",req,difficult);
             *stateDone = 0;
