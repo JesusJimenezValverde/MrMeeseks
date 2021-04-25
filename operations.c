@@ -18,8 +18,12 @@ Fecha de entrega: 24-4-2021
 #include <math.h>
 #include <semaphore.h>
 
+
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
 int N =1;
-int numInstance = 0;
 
 int randGenerate(int inicio, int fin){
     return (rand() % (fin - inicio + 1)) + inicio;
@@ -49,11 +53,11 @@ int readDifficult(){
 
         int type = randGenerate(0, 100);
 
-        if(type >= 0 && type <= 15){
+        if(type >= 0 && type <= 40){
             difficult = randGenerate(0, 45);
-        }else if(type > 15 && type <= 85){
+        }else if(type > 40 && type <= 80){
             difficult = randGenerate(45, 85);
-        }else{ // 86 <= type <= 100
+        }else{ // 80 <= type <= 100
             difficult = randGenerate(85, 100);
         }
 
@@ -80,10 +84,10 @@ int tryRequest(double difficult){
 
 int amountChild(double difficult){
     if (difficult >= 0 & difficult <= 45){
-        return randGenerate(1, 5); 
+        return randGenerate(3, 10); 
         
     }else if(difficult > 45 & difficult <= 85){
-        return randGenerate(1, 2);
+        return randGenerate(1, 5);
 
     }else{
         return 0;
@@ -102,6 +106,10 @@ double diluirDificultad(double dificultad, int numHIjos){
     }
 }
 
+key_t clave;	//Clave de acceso a la zona de memoria
+long int id;	//Identificador de la zona de memoria
+int *pmem=NULL;	//Puntero a la zona de memoria
+
 char * textualRequest(int *stateDone, int amountSegToChaos){
     char * req = readRequest();
     int difficult = readDifficult();
@@ -114,7 +122,11 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
     int* pipe_a_padre;
     int* pipes_a_hijos;
 
-    numInstance = 0;
+    clave=ftok("/bin/ls",33); //Cualquier fichero existente y cualquier int
+	id=shmget(clave,sizeof(int)*100,0777|IPC_CREAT);
+	pmem=(int *)shmat(id,(char *)0,0);
+
+    pmem[5] = 1;
 
     // Variables para medir tiempos
     struct timespec begin, end; 
@@ -123,7 +135,7 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
     // Piepe para notificar el estado de retorno
     int fdComplete[2];
     pipe(fdComplete);
-    char buf[10];
+    char buf[100];
 
     // Pipe para paso de solicitud entre procesos
     char* mensaje = malloc(sizeof(char)*1000);
@@ -141,7 +153,7 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
 
     if(pid == 0){ // Hijo
         firstMeeseek = getpid();
-        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d)\n",getpid(),getppid(),temp_N, numInstance);
+        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d)\n",getpid(),getppid(),temp_N, 1);
 
         if(difficult <= 0){ // Muy dificil! Mr Meeseeks no puede hacer esa tarea
 
@@ -175,7 +187,7 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
 
             if(elapsed > amountSegToChaos){
                 close(fdComplete[0]);
-                write(fdComplete[1],"2",5);
+                write(fdComplete[1],"0",5);
                 close(fdComplete[1]);
                 exit(0);
                 break;
@@ -187,7 +199,7 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
                 printf("Lo logre!! Mr Meeseeks(pid: %d, ppid: %d, N: %d, dif: %d) Bye!!!\n",getpid(),getppid(),temp_N,difficult);
                 
                 close(fdComplete[0]);
-                write(fdComplete[1],"1",5);
+                write(fdComplete[1],"1",sizeof(char)*100);
                 close(fdComplete[1]);
                 exit(0);
                 
@@ -203,15 +215,11 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
 
                     if(pid == 0){ //si el fork si se realizó y un hijo se creó
 
-                        // Manejo de semarofos para aumentar el numero de instancias
-                        sem_wait(&instance_sem);
+                        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d, dif: %d)\n",getpid(),getppid(),temp_N, i+1,difficult);
 
-                        numInstance++;
-                        printf("Hi, I'm Mr Meeseeks! Look at me. (pid: %d, ppid: %d, N: %d, i: %d, dif: %d, mens: %s)\n",getpid(),getppid(),temp_N, i+1,difficult,mensaje);
+                        // Area de memoria compartidad del numero de meeseeks
+                        pmem[5] ++;
 
-                        sem_post(&instance_sem);
-
-                        
                         // Se recibe el req por un pipe
                         close(pipe_temp[1]);
                         read(pipe_temp[0], mensaje, sizeof(char)*1000);
@@ -243,7 +251,6 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
         close(fdComplete[1]);
         read(fdComplete[0],buf,sizeof(buf));
         close(fdComplete[0]);
-        //printf("Padre lee: %s, %d\n",buf,numInstance );
         
         // Medicion de tiempo
         clock_gettime(CLOCK_REALTIME, &end);
@@ -253,16 +260,16 @@ char * textualRequest(int *stateDone, int amountSegToChaos){
 
         char* log = malloc(sizeof(char)*1000);
         
-        if(!strcmp(buf,"1")){
-            sprintf(log, "- Mr Meeseeks: %d, hizo tarea '%s'(dificultad:%d), tardo : %f seg\n",pid,req,difficult,elapsed);
-            *stateDone = 1;
-        }else if(!strcmp(buf,"-1")){
+        if(!strcmp(buf,"-1")){
             sprintf(log, "- Mr Meeseeks: %d NO logro hacer la tarea '%s'(dificultad:%d)\n",pid,req,difficult);
             *stateDone = 0;
         }else if(!strcmp(buf,"2")){
             printf("\n\n☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢\n\t\tCAOS PLANETARIO\n☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢ ☢\n\n");
             sprintf(log, "- Se declaro CAOS PLANETARIO para la tarea '%s'(dificultad:%d)\n",req,difficult);
             *stateDone = 0;
+        }else{
+            sprintf(log, "- Mr Meeseeks: %d, hizo tarea '%s'(dificultad:%d), tardo : %f seg, uso: %d\n",pid,req,difficult,elapsed,pmem[5]);
+            *stateDone = 1;
         }
 
         //printf("%s",log);
@@ -506,5 +513,3 @@ char* runProgram(int *stateDone){
     }
 
 }
-
-

@@ -21,10 +21,9 @@ Fecha de entrega: 24-4-2021
 #include <sys/shm.h>
 #include <errno.h>
 
-#include "operations.c"
+#include "extraOperations.c"
 
 void mrMeeseeks(){
-    //srand (time(NULL));
     int option = 1;
 
     int originalBox = getpid();
@@ -47,17 +46,13 @@ void mrMeeseeks(){
         printf("Seleccione(%d) una de las opciones:\n\t1. Accion Textual\n\t2. Operacion Logica-Aritmeticas\n\t3. Ejecutar Programa\n\t4. Configurar tiempo antes del caos planetario\n\t5. Salir\n\nIngrese el numero de la acción que desar realizar: ",getpid());
         
         scanf("%d", &option);
-        
-        time_t t;
-        
+
         char* request  = malloc(sizeof(char)*1000);
 
         switch (option)
         {
         case 1: // Textuales: "quiero ser feliz"
-            
-            srand((unsigned) time(&t));
-            strcat(request,textualRequest(&state,amountSegToChaos));
+            strcat(request,textualRequest2(&state,amountSegToChaos));
             
             printf("%s",request);
             
